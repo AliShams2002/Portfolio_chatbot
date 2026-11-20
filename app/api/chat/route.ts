@@ -2,6 +2,7 @@ import { google } from "@ai-sdk/google";
 import {
   APICallError,
   convertToModelMessages,
+  RetryError,
   safeValidateUIMessages,
   streamText,
   type UIMessage,
@@ -22,6 +23,35 @@ const systemPrompt = `تو دستیار هوشمند پورتفولیو هستی
 
 محتوای پورتفولیو:
 `;
+
+function getProviderError(error: unknown): APICallError | undefined {
+  let currentError = error;
+  const visited = new Set<unknown>();
+
+  while (currentError && !visited.has(currentError)) {
+    visited.add(currentError);
+
+    if (APICallError.isInstance(currentError)) {
+      return currentError;
+    }
+
+    if (RetryError.isInstance(currentError)) {
+      currentError = currentError.lastError;
+      continue;
+    }
+
+    if (
+      typeof currentError === "object" &&
+      "cause" in currentError &&
+      currentError.cause
+    ) {
+      currentError = currentError.cause;
+      continue;
+    }
+
+    break;
+  }
+}
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -54,7 +84,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const portfolio = await getPortfolioContent();
     const result = streamText({
-      model: google("gemini-3.6-flash"),
+      model: google("gemini-3.1-flash-lite"),
       system: `${systemPrompt}\n${portfolio}`,
       messages: await convertToModelMessages(validation.data),
       abortSignal: request.signal,
@@ -69,13 +99,14 @@ export async function POST(request: Request): Promise<Response> {
     return result.toUIMessageStreamResponse({
       onError: (error: unknown) => {
         console.error("Chat stream failed:", error);
-        if (APICallError.isInstance(error) && error.statusCode === 429) {
+        const providerError = getProviderError(error);
+        if (providerError?.statusCode === 429) {
           return "سهمیه یا محدودیت درخواست‌های Gemini پر شده است. سهمیه و وضعیت صورتحساب API را در Google AI Studio بررسی کنید.";
         }
 
         if (
-          APICallError.isInstance(error) &&
-          (error.statusCode === 503 || error.message.toLowerCase().includes("high demand"))
+          providerError?.statusCode === 503 ||
+          providerError?.message.toLowerCase().includes("high demand")
         ) {
           return "مدل Gemini موقتاً شلوغ است. لطفاً چند لحظه دیگر دوباره پیام را ارسال کنید.";
         }

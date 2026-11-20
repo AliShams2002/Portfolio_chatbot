@@ -15,6 +15,17 @@ export function Chat() {
   const { messages, sendMessage, status, error, stop } = useChat();
   const [input, setInput] = useState("");
   const isLoading = status === "submitted" || status === "streaming";
+  const latestMessage = messages.at(-1);
+  const latestAssistantText =
+    latestMessage?.role === "assistant"
+      ? latestMessage.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part.type === "text" ? part.text : ""))
+          .join("")
+      : "";
+  const isWaitingForFirstToken =
+    status === "submitted" ||
+    (status === "streaming" && latestAssistantText.length === 0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,12 +128,15 @@ export function Chat() {
                   .filter((part) => part.type === "text")
                   .map((part) => (part.type === "text" ? part.text : ""))
                   .join("")}
+                isStreaming={
+                  message.id === latestMessage?.id && status === "streaming"
+                }
               />
             );
           })
         )}
 
-        {isLoading && (
+        {isWaitingForFirstToken && (
           <div
             className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400"
             role="status"

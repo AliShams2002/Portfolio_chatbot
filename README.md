@@ -1,78 +1,119 @@
-# دستیار هوشمند پورتفولیو
+# Portfolio AI Chatbot
 
-یک چت‌بات استریم‌شونده برای پورتفولیو که به بازدیدکنندگان کمک می‌کند درباره پروژه‌ها، مهارت‌ها و سوابق حرفه‌ای سؤال کنند. پاسخ‌ها با Gemini تولید می‌شوند و محتوای مرجع از فایل Markdown محلی خوانده می‌شود.
+A streaming portfolio assistant that helps visitors explore a developer's projects, skills, and background through a conversational interface. The assistant uses Google Gemini and answers portfolio questions using the content in `content/portfolio.md`.
 
-## فناوری‌ها
+## Features
 
-- Next.js 14 و App Router
-- TypeScript
-- Tailwind CSS با پشتیبانی از حالت تاریک
-- Vercel AI SDK (`ai`)
-- Google Gemini از طریق `@ai-sdk/google`
+- Real-time Gemini responses with a word-by-word reveal in the chat UI
+- Portfolio-grounded system instructions to reduce unsupported answers
+- Persian and English responses based on the visitor's language
+- Responsive chat interface with light and dark themes
+- Accessible message input, loading states, and error feedback
+- Server-side API key handling and request validation
 
-## راه‌اندازی
+## Tech Stack
 
-### پیش‌نیازها
+- Next.js 16 App Router
+- React 19 and TypeScript
+- Tailwind CSS
+- Vercel AI SDK (`ai` and `@ai-sdk/react`)
+- Google Gemini provider (`@ai-sdk/google`)
 
-- Node.js 20.9 یا بالاتر
+## Prerequisites
+
+- Node.js 20.9 or later
 - npm
-- کلید API گوگل Gemini
+- A Google Gemini API key
 
-### نصب و تنظیم کلید API
+## Getting Started
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-از فایل نمونه یک فایل محلی بسازید:
+### 2. Configure the Gemini API key
+
+Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey). Copy `.env.local.example` to `.env.local`:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-سپس مقدار `GOOGLE_GENERATIVE_AI_API_KEY` را در `.env.local` قرار دهید. کلید Gemini را می‌توانید از [Google AI Studio](https://aistudio.google.com/apikey) دریافت کنید. این فایل در Git نادیده گرفته می‌شود؛ کلید را در کد یا مخزن عمومی قرار ندهید.
+On Windows PowerShell, use:
 
-### شخصی‌سازی محتوا
+```powershell
+Copy-Item .env.local.example .env.local
+```
 
-فایل [`content/portfolio.md`](./content/portfolio.md) را با نام، پروژه‌ها، مهارت‌ها و سوابق واقعی خودتان تکمیل کنید. دستیار فقط از محتوای همین فایل برای پاسخ به پرسش‌های مربوط به پورتفولیو استفاده می‌کند.
+Set the key in `.env.local`:
 
-### اجرا
+```dotenv
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key_here
+```
+
+Never commit `.env.local` or expose the API key in client-side code. The repository ignores local environment files by default.
+
+### 3. Add your portfolio information
+
+Edit [`content/portfolio.md`](./content/portfolio.md) and replace its contents with accurate, up-to-date information about the portfolio owner. The chat API loads this file on the server and includes it as the assistant's reference material.
+
+### 4. Run the development server
 
 ```bash
 npm run dev
 ```
 
-برنامه را در [http://localhost:3000](http://localhost:3000) باز کنید.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-برای ساخت نسخه تولید:
+## Available Scripts
 
-```bash
-npm run build
-npm run start
-```
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the local development server |
+| `npm run build` | Create an optimized production build |
+| `npm run start` | Start the production server (run `npm run build` first) |
 
-## ساختار پروژه
+## Project Structure
 
 ```text
 app/
-├── api/chat/route.ts   # API استریم چت
-├── globals.css         # استایل‌های عمومی
-├── layout.tsx          # قالب و metadata
-└── page.tsx            # صفحه اصلی پورتفولیو
+├── api/
+│   └── chat/
+│       └── route.ts       # Validates requests and streams Gemini responses
+├── globals.css            # Global styles and theme backgrounds
+├── layout.tsx             # Root layout, font, and SEO metadata
+└── page.tsx               # Portfolio landing page
 components/
-├── Chat.tsx            # رابط چت و مدیریت پیام‌ها
-├── ChatInput.tsx       # فرم ارسال پیام
-└── ChatMessage.tsx     # نمایش پیام‌ها
+├── Chat.tsx               # Chat state, streaming UI, and error handling
+├── ChatInput.tsx          # Accessible message form
+└── ChatMessage.tsx        # Chat bubble and word-by-word reveal
 content/
-└── portfolio.md        # اطلاعات مرجع پورتفولیو
+└── portfolio.md           # Assistant reference content
 lib/
-└── portfolio.ts        # خواندن محتوای پورتفولیو
+└── portfolio.ts           # Server-side portfolio content loader
 ```
 
-## تصویر برنامه
+## Configuration and Troubleshooting
 
-> پس از اجرا، تصویر برنامه را اینجا اضافه کنید.
+- The API route uses the `gemini-3.1-flash-lite` model. If that model is unavailable to your Google AI Studio project, select a model that is enabled for your account in `app/api/chat/route.ts`.
+- Gemini API quotas and rate limits depend on the Google AI Studio project and model. Check the project's quota and billing status if requests are rejected.
+- After editing `.env.local`, restart the development server so Next.js reloads the environment variables.
+- Provider errors are logged by the server; the chat displays a user-facing message when a request fails.
 
-## استقرار روی Vercel
+## Deployment
 
-مخزن را به Vercel متصل کنید و متغیر محیطی `GOOGLE_GENERATIVE_AI_API_KEY` را در تنظیمات پروژه تعریف کنید. فایل `content/portfolio.md` باید همراه کد در مخزن موجود باشد.
+Deploy the repository to Vercel and add `GOOGLE_GENERATIVE_AI_API_KEY` to the project's environment variables for each required environment. Ensure `content/portfolio.md` is included in the deployment. Then deploy using the standard Next.js build configuration.
+
+## Screenshot
+
+Add a screenshot of the running application here, for example:
+
+```text
+![Portfolio AI Chatbot](./docs/screenshot.png)
+```
+
+## License
+
+No license has been specified for this project. Add a `LICENSE` file before distributing or reusing it.
