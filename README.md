@@ -106,14 +106,6 @@ lib/
 
 Deploy the repository to Vercel and add `GOOGLE_GENERATIVE_AI_API_KEY` to the project's environment variables for each required environment. Ensure `content/portfolio.md` is included in the deployment. Then deploy using the standard Next.js build configuration.
 
-## Screenshot
-
-Add a screenshot of the running application here, for example:
-
-```text
-![Portfolio AI Chatbot](./docs/screenshot.png)
-```
-
 ## License
 
 No license has been specified for this project. Add a `LICENSE` file before distributing or reusing it.
